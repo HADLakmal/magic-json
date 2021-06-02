@@ -1,6 +1,10 @@
 package mjson
 
-import "fmt"
+import (
+	"fmt"
+	"regexp"
+	"strings"
+)
 
 type nodeType string
 
@@ -25,6 +29,13 @@ func newNode(name string, nt interface{}, value interface{}) *node {
 	}
 }
 
+func (n *node) replaceCharacter(old, new string, count int) {
+	var reg = regexp.MustCompile(fmt.Sprintf(`*%s*`, old))
+	if reg.MatchString(n.name) {
+		n.name = strings.Replace(n.name, old, new, count)
+	}
+}
+
 type list struct {
 	head *node
 }
@@ -46,12 +57,13 @@ func (lst *list) newHeader(data interface{}) *node {
 	}
 	return n
 }
-
-func (lst *list) display() {
-	ls := lst.head
-	for ls != nil {
-		fmt.Printf("%s (%s) = %v ->", ls.name, ls.nt, ls.value)
-		ls = ls.next[0]
+func (lst *list) traversal(n *node, fn func(node *node)) {
+	fn(n)
+	if n.next == nil {
+		return
 	}
-	fmt.Println()
+
+	for _, nd := range n.next {
+		lst.traversal(nd, fn)
+	}
 }
