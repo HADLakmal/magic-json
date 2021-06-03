@@ -1,10 +1,16 @@
-package mjson
+package mjson_test
 
-import "testing"
+import (
+	"fmt"
+	mjson "github.com/HADLakmal/magic-json"
+	"testing"
+)
 
 func TestMJson_ReplaceValue(t *testing.T) {
 	tests := map[string]struct {
-		jsonBody string
+		jsonBody  string
+		wantError bool
+		expected  string
 	}{
 		`object Json `: {jsonBody: `{
     "filters": [
@@ -17,21 +23,21 @@ func TestMJson_ReplaceValue(t *testing.T) {
         },
 		{
             "key": "type",
-            "operator": "MATCH_VALUE",
+            "operator": "MATCH__VALUE",
             "values": [
-                "ASSET"
+                "ASSET_"
             ]
         }
     ],
     "order_by": [{
-	"key": "type",
+	"key": "type_",
 	}
 	],
     "paging": {
         "offset": 0,
         "size": 20
     }
-}`},
+}`, expected: `{"filters":[{"key":"type","operator":"MATCH","values":["ASSET"]},{"key":"type","operator":"MATCH_VALUE","values":["ASSET"]}],"order_by":[{"key":"type"}],"paging":{"offset":0,"size":20}}`},
 		`array Json `: {jsonBody: `[
     {
         "headers": [
@@ -49,8 +55,84 @@ func TestMJson_ReplaceValue(t *testing.T) {
             }
         ]
     }
-]`},
-		`sample Json `: {jsonBody: `{
+]`, expected: `[{"headers":[{"key":"accountid","value":"0a40e6a9-1216-426a-977a-7d13a36dc64e"},{"key":"createdby","value":"0a40e6a9-1216-426a-977a-7d13a36dc64e"},{"key":"traceid","value":"e463fe2f-8dcc-41a5-999c-6b886c9101fa"}]}]`},
+	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			p, err := mjson.NewMagicJSON(test.jsonBody)
+			if err != nil {
+				panic(err)
+			}
+			p.ReplaceCharInValue("_", "")
+			str, err := p.Release()
+			if err != nil && !test.wantError {
+				panic(err)
+			}
+			if str != test.expected {
+				t.Fatal(fmt.Sprintf(`got : %s, \n and expected :%s`, str, test.expected))
+			}
+		})
+	}
+}
+
+func TestMJson_ObjectKeyReplaceValue(t *testing.T) {
+	tests := map[string]struct {
+		jsonBody  string
+		wantError bool
+		expected  string
+	}{
+		`object Json `: {jsonBody: `{
+    "filters": [
+        {
+            "key": "type",
+            "operator": "MATCH",
+            "values": [
+                "ASSET"
+            ]
+        },
+		{
+            "key": "type",
+            "operator": "MATCH__VALUE",
+            "values": [
+                "ASSET_"
+            ]
+        }
+    ],
+    "order_by": [{
+	"key": "type_",
+	}
+	],
+    "paging": {
+        "offset": 0,
+        "size": 20
+    }
+}`, expected: `{"filters":[{"key":"type","operator":"MATCH","values":["ASSET"]},{"key":"type","operator":"MATCH_VALUE","values":["ASSET"]}],"order_by":[{"key":"type_"}],"paging":{"offset":0,"size":20}}`},
+	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			p, err := mjson.NewMagicJSON(test.jsonBody)
+			if err != nil {
+				panic(err)
+			}
+			p.Key("filters").ReplaceCharInValue("_", "")
+			str, err := p.Release()
+			if err != nil && !test.wantError {
+				panic(err)
+			}
+			if str != test.expected {
+				t.Fatal(fmt.Sprintf(`got : %s, \n and expected :%s`, str, test.expected))
+			}
+		})
+	}
+}
+
+func TestMJson_ValueStringConverter(t *testing.T) {
+	tests := map[string]struct {
+		jsonBody  string
+		wantError bool
+		expected  string
+	}{
+		`object Json `: {jsonBody: `{
     "filters": [
         {
             "key": "type",
@@ -60,28 +142,33 @@ func TestMJson_ReplaceValue(t *testing.T) {
             ]
         }
     ]
-}`},
+}`, expected: `{"filters":[{"key":"replaced","operator":"replaced","values":["replaced"]}]}`},
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			m := NewMagicJson()
-			p, err := m.Load(test.jsonBody)
+			p, err := mjson.NewMagicJSON(test.jsonBody)
 			if err != nil {
 				panic(err)
 			}
-			p.ReplaceValue("_", "")
-			str, err := m.Release()
-			if err != nil {
+			p.ValueStringConverter(func(value string) interface{} {
+				return "replaced"
+			})
+			str, err := p.Release()
+			if err != nil && !test.wantError {
 				panic(err)
 			}
-			t.Log(str)
+			if str != test.expected {
+				t.Fatal(fmt.Sprintf(`got : %s, \n and expected :%s`, str, test.expected))
+			}
 		})
 	}
 }
 
 func TestMJson_ReplaceKey(t *testing.T) {
 	tests := map[string]struct {
-		jsonBody string
+		jsonBody  string
+		wantError bool
+		expected  string
 	}{
 		`object Json `: {jsonBody: `{
     "filters": [
@@ -108,27 +195,9 @@ func TestMJson_ReplaceKey(t *testing.T) {
         "offset": 0,
         "size": 20
     }
-}`},
-		`array Json `: {jsonBody: `[
-    {
-        "headers": [
-            {
-                "value": "0a40e6a9-1216-426a-977a-7d13a36dc64e",
-                "key": "account_id"
-            },
-            {
-                "value": "0a40e6a9-1216-426a-977a-7d13a36dc64e",
-                "key": "created_by"
-            },
-            {
-                "value": "e463fe2f-8dcc-41a5-999c-6b886c9101fa",
-                "key": "trace_id"
-            }
-        ]
-    }
-]`},
+}`, expected: `{"filters":[{"key":"type","operator":"MATCH","values":["ASSET"]},{"key":"type","operator":"MATCH","values":["ASSET"]}],"orderby":[{"key":"type"}],"paging":{"offset":0,"size":20}}`},
 		`sample Json `: {jsonBody: `{
-    "filters": [
+    "filters_": [
         {
             "key": "type",
             "operator": "MATCH",
@@ -137,21 +206,215 @@ func TestMJson_ReplaceKey(t *testing.T) {
             ]
         }
     ]
-}`},
+}`, expected: `{"filters":[{"key":"type","operator":"MATCH","values":["ASSET"]}]}`},
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			m := NewMagicJson()
-			p, err := m.Load(test.jsonBody)
+			p, err := mjson.NewMagicJSON(test.jsonBody)
 			if err != nil {
 				panic(err)
 			}
-			p.ReplaceKey("_", "")
-			str, err := m.Release()
+			str, err := p.ReplaceKeyCharacter("_", "").Release()
+			if err != nil && !test.wantError {
+				panic(err)
+			}
+			if str != test.expected {
+				t.Fatal(fmt.Sprintf(`got : %s, \n and expected :%s`, str, test.expected))
+			}
+		})
+	}
+}
+
+func TestMJson_IntToString(t *testing.T) {
+	tests := map[string]struct {
+		jsonBody  string
+		wantError bool
+		expected  string
+	}{
+		`object Json `: {jsonBody: `{
+    "filters": [
+        {
+            "key": "type",
+            "operator": "MATCH",
+            "values": [
+                "ASSET"
+            ]
+        },
+		{
+            "key": "type",
+            "operator": "MATCH",
+            "values": [
+                "ASSET"
+            ]
+        }
+    ],
+    "order_by": [{
+	"key": "type",
+	}
+	],
+    "paging": {
+        "offset": 0,
+        "size": 20
+    }
+}`, expected: `{"filters":[{"key":"type","operator":"MATCH","values":["ASSET"]},{"key":"type","operator":"MATCH","values":["ASSET"]}],"order_by":[{"key":"type"}],"paging":{"offset":"0","size":"20"}}`},
+	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			p, err := mjson.NewMagicJSON(test.jsonBody)
 			if err != nil {
 				panic(err)
 			}
-			t.Log(str)
+			str, err := p.IntToString().Release()
+			if err != nil && !test.wantError {
+				panic(err)
+			}
+			if str != test.expected {
+				t.Fatal(fmt.Sprintf(`got : %s, \n and expected :%s`, str, test.expected))
+			}
+		})
+	}
+}
+
+func TestMJson_IntConverter(t *testing.T) {
+	tests := map[string]struct {
+		jsonBody  string
+		wantError bool
+		expected  string
+	}{
+		`object Json `: {jsonBody: `{
+    "filters": [
+        {
+            "key": "type",
+            "operator": "MATCH",
+            "values": [
+                "ASSET"
+            ]
+        },
+		{
+            "key": "type",
+            "operator": "MATCH",
+            "values": [
+                "ASSET"
+            ]
+        }
+    ],
+    "order_by": [{
+	"key": "type",
+	}
+	],
+    "paging": {
+        "offset": 0,
+        "size": 20
+    }
+}`, expected: `{"filters":[{"key":"type","operator":"MATCH","values":["ASSET"]},{"key":"type","operator":"MATCH","values":["ASSET"]}],"order_by":[{"key":"type"}],"paging":{"offset":"replace","size":"replace"}}`},
+	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			p, err := mjson.NewMagicJSON(test.jsonBody)
+			if err != nil {
+				panic(err)
+			}
+			str, err := p.IntConverter(func(value int64) interface{} {
+				return "replace"
+			}).Release()
+			if err != nil && !test.wantError {
+				panic(err)
+			}
+			if str != test.expected {
+				t.Fatal(fmt.Sprintf(`got : %s, \n and expected :%s`, str, test.expected))
+			}
+		})
+	}
+}
+
+func TestMJson_FloatToString(t *testing.T) {
+	tests := map[string]struct {
+		jsonBody  string
+		wantError bool
+		expected  string
+	}{
+		`object Json `: {jsonBody: `{
+    "paging": {
+        "offset": 1.1,
+        "size": 20
+    }
+}`, expected: `{"paging":{"offset":"1.1","size":"20"}}`},
+	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			p, err := mjson.NewMagicJSON(test.jsonBody)
+			if err != nil {
+				panic(err)
+			}
+			str, err := p.FloatToString().Release()
+			if err != nil && !test.wantError {
+				panic(err)
+			}
+			if str != test.expected {
+				t.Fatal(fmt.Sprintf(`got : %s, \n and expected :%s`, str, test.expected))
+			}
+		})
+	}
+}
+
+func TestMJson_FloatToInt(t *testing.T) {
+	tests := map[string]struct {
+		jsonBody  string
+		wantError bool
+		expected  string
+	}{
+		`object Json `: {jsonBody: `{
+    "paging": {
+        "offset": 1.1,
+        "size": 20
+    }
+}`, expected: `{"paging":{"offset":1,"size":20}}`},
+	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			p, err := mjson.NewMagicJSON(test.jsonBody)
+			if err != nil {
+				panic(err)
+			}
+			str, err := p.FloatToInt().Release()
+			if err != nil && !test.wantError {
+				panic(err)
+			}
+			if str != test.expected {
+				t.Fatal(fmt.Sprintf(`got : %s, \n and expected :%s`, str, test.expected))
+			}
+		})
+	}
+}
+
+func TestMJson_FloatConverter(t *testing.T) {
+	tests := map[string]struct {
+		jsonBody  string
+		wantError bool
+		expected  string
+	}{
+		`object Json `: {jsonBody: `{
+    "paging": {
+        "offset": 1.1,
+        "size": 20
+    }
+}`, expected: `{"paging":{"offset":"float convert","size":"float convert"}}`},
+	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			p, err := mjson.NewMagicJSON(test.jsonBody)
+			if err != nil {
+				panic(err)
+			}
+			str, err := p.FloatConverter(func(value float64) interface{} {
+				return "float convert"
+			}).Release()
+			if err != nil && !test.wantError {
+				panic(err)
+			}
+			if str != test.expected {
+				t.Fatal(fmt.Sprintf(`got : %s, \n and expected :%s`, str, test.expected))
+			}
 		})
 	}
 }

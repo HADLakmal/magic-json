@@ -5,17 +5,22 @@ import (
 	"fmt"
 	"github.com/tidwall/gjson"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
+// mJson holds the json object as a list of nodes
 type mJson struct {
 	list
+	beginNode *node
 }
 
-func NewMagicJson() JSONLoader {
-	return new(mJson)
+// NewMagicJSON create the new mJson
+func NewMagicJSON(json string) (MagicJSON, error) {
+	return new(mJson).load(json)
 }
 
+// extractor bind map of json information into list of nodes
 func (mj *mJson) extractor(data interface{}, n *node) {
 	m, tMap := data.(map[string]interface{})
 	d, tArray := data.([]interface{})
@@ -50,6 +55,7 @@ func (mj *mJson) extractor(data interface{}, n *node) {
 	}
 }
 
+// compound is called when lib need to release the json as a string
 func (mj *mJson) compound(n *node) interface{} {
 	switch n.nt.(type) {
 	case nodeType:
@@ -83,7 +89,8 @@ func (mj *mJson) compound(n *node) interface{} {
 	return nil
 }
 
-func (mj *mJson) Load(j string) (JSONConverter, error) {
+// load parse the string json into a mJson
+func (mj *mJson) load(j string) (MagicJSON, error) {
 	// parse json string from gjson lib
 	p := gjson.Parse(j).Value()
 	if p == nil {
@@ -92,9 +99,24 @@ func (mj *mJson) Load(j string) (JSONConverter, error) {
 	// json object extract into node list
 	mj.extractor(p, mj.newHeader(p))
 
+	// attach beginning node as header
+	mj.beginNode = mj.head
+
 	return mj, nil
 }
 
+// Key key finder
+func (mj *mJson) Key(key string) JSONConverter {
+	mj.traversal(mj.head, func(node *node) {
+		if node.name == key {
+			mj.beginNode = node
+		}
+	})
+
+	return mj
+}
+
+// Release mJson objects
 func (mj *mJson) Release() (string, error) {
 	m := mj.compound(mj.head)
 
@@ -106,62 +128,178 @@ func (mj *mJson) Release() (string, error) {
 	return string(jsonBytes), nil
 }
 
-func (mj *mJson) ReplaceKey(oldCharacters, newCharacters string) {
+func (mj *mJson) ReplaceKeyCharacter(oldCharacters, newCharacters string) JSONRelease {
 	// old character is empty
 	if oldCharacters == "" {
-		return
+		return mj
 	}
 
-	mj.traversal(mj.head, func(node *node) {
+	mj.keyIdentifier(mj.beginNode, oldCharacters, newCharacters, 1)
+
+	return mj
+}
+
+func (mj *mJson) ReplaceCharsInKey(oldCharacters, newCharacters string, count int) JSONRelease {
+	// old character is empty
+	if oldCharacters == "" {
+		return mj
+	}
+
+	mj.keyIdentifier(mj.beginNode, oldCharacters, newCharacters, count)
+
+	return mj
+}
+
+func (mj *mJson) keyIdentifier(n *node, oldCharacters, newCharacters string, count int) {
+	mj.traversal(n, func(node *node) {
 		var reg = regexp.MustCompile(fmt.Sprintf(`%s*`, oldCharacters))
 		if reg.MatchString(node.name) {
-			node.name = strings.Replace(node.name, oldCharacters, newCharacters, 1)
+			node.name = strings.Replace(node.name, oldCharacters, newCharacters, count)
 		}
 	})
 }
 
-func (mj *mJson) ReplaceValue(oldCharacters, newCharacters string) {
+func (mj *mJson) ReplaceCharInValue(oldCharacters, newCharacters string) JSONRelease {
 	// old character is empty
 	if oldCharacters == "" {
-		return
+		return mj
 	}
 
-	mj.traversal(mj.head, func(node *node) {
+	mj.stringValueIdentifier(mj.beginNode, func(s string) interface{} {
+		var reg = regexp.MustCompile(fmt.Sprintf(`%s*`, oldCharacters))
+		if reg.MatchString(s) {
+			return strings.Replace(s, oldCharacters, newCharacters, 1)
+		}
+		return s
+	})
+
+	return mj
+}
+
+func (mj *mJson) ReplaceValueCharacters(oldCharacters, newCharacters string, count int) JSONRelease {
+	// old character is empty
+	if oldCharacters == "" {
+		return mj
+	}
+
+	mj.stringValueIdentifier(mj.beginNode, func(s string) interface{} {
+		var reg = regexp.MustCompile(fmt.Sprintf(`%s*`, oldCharacters))
+		if reg.MatchString(s) {
+			return strings.Replace(s, oldCharacters, newCharacters, count)
+		}
+		return s
+	})
+
+	return mj
+}
+
+func (mj *mJson) ValueStringToInt() JSONRelease {
+	mj.stringValueIdentifier(mj.beginNode, func(s string) interface{} {
+		i, err := strconv.ParseInt(s, 10, 64)
+		if err == nil {
+			return i
+		}
+
+		return s
+	})
+
+	return mj
+}
+
+func (mj *mJson) ValueStringToFloat() JSONRelease {
+	mj.stringValueIdentifier(mj.beginNode, func(s string) interface{} {
+		i, err := strconv.ParseFloat(s, 64)
+		if err == nil {
+			return i
+		}
+
+		return s
+	})
+
+	return mj
+}
+
+func (mj *mJson) ValueStringConverter(fn func(value string) interface{}) JSONRelease {
+	mj.stringValueIdentifier(mj.beginNode, func(s string) interface{} {
+		return fn(s)
+	})
+
+	return mj
+}
+
+func (mj *mJson) stringValueIdentifier(n *node, stFn func(s string) interface{}) {
+	mj.traversal(n, func(node *node) {
 		if node.value == nil {
 			return
 		}
 		if v, ok := node.value.(string); ok {
-			var reg = regexp.MustCompile(fmt.Sprintf(`%s*`, oldCharacters))
-			if reg.MatchString(v) {
-				node.value = strings.Replace(v, oldCharacters, newCharacters, 1)
-			}
+			node.value = stFn(v)
 		}
 	})
 }
 
-//func (mj *mJson) LoadJson(j string) {
-//	p := gjson.Parse(j).Value()
-//	n := mj.newHeader(p)
-//	mj.extractor(p, n)
-//
-//	mj.traversal(mj.head, func(node *node) {
-//		if node.value == nil {
-//			return
-//		}
-//		switch v := node.value.(type) {
-//		case string:
-//			var reg = regexp.MustCompile(`_*`)
-//			if reg.MatchString(v) {
-//				node.value = strings.Replace(v, `_`, ``, 1)
-//			}
-//		}
-//	})
-//
-//	m := mj.compound(n)
-//
-//	jsonBytes, errByte := json.Marshal(m)
-//	if errByte != nil {
-//		return
-//	}
-//	println(string(jsonBytes))
-//}
+func (mj *mJson) IntToString() JSONRelease {
+	mj.intValueIdentifier(mj.beginNode, func(val int64) interface{} {
+		return fmt.Sprintf(`%v`, val)
+	})
+
+	return mj
+}
+
+func (mj *mJson) IntConverter(fn func(value int64) interface{}) JSONRelease {
+	mj.intValueIdentifier(mj.beginNode, func(val int64) interface{} {
+		return fn(val)
+	})
+
+	return mj
+}
+
+func (mj *mJson) intValueIdentifier(n *node, intFn func(val int64) interface{}) {
+	mj.traversal(n, func(node *node) {
+		if node.value == nil {
+			return
+		}
+		s := fmt.Sprintf(`%v`, node.value)
+		i, err := strconv.ParseInt(s, 10, 64)
+		if err == nil {
+			node.value = intFn(i)
+		}
+	})
+}
+
+func (mj *mJson) FloatToString() JSONRelease {
+	mj.floatValueIdentifier(mj.beginNode, func(val float64) interface{} {
+		return fmt.Sprintf(`%v`, val)
+	})
+
+	return mj
+}
+
+func (mj *mJson) FloatToInt() JSONRelease {
+	mj.floatValueIdentifier(mj.beginNode, func(val float64) interface{} {
+		return int(val)
+	})
+
+	return mj
+}
+
+func (mj *mJson) FloatConverter(fn func(value float64) interface{}) JSONRelease {
+	mj.floatValueIdentifier(mj.beginNode, func(val float64) interface{} {
+		return fn(val)
+	})
+
+	return mj
+}
+
+func (mj *mJson) floatValueIdentifier(n *node, floatFn func(val float64) interface{}) {
+	mj.traversal(n, func(node *node) {
+		if node.value == nil {
+			return
+		}
+		s := fmt.Sprintf(`%v`, node.value)
+		f, err := strconv.ParseFloat(s, 64)
+		if err == nil {
+			node.value = floatFn(f)
+		}
+	})
+}

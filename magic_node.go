@@ -1,11 +1,5 @@
 package mjson
 
-import (
-	"fmt"
-	"regexp"
-	"strings"
-)
-
 type nodeType string
 
 const (
@@ -14,6 +8,7 @@ const (
 	field  nodeType = `field`
 )
 
+// node compact the json key value relationship
 type node struct {
 	next  []*node
 	name  string
@@ -21,6 +16,7 @@ type node struct {
 	value interface{}
 }
 
+// newNode create new node
 func newNode(name string, nt interface{}, value interface{}) *node {
 	return &node{
 		name:  name,
@@ -29,17 +25,13 @@ func newNode(name string, nt interface{}, value interface{}) *node {
 	}
 }
 
-func (n *node) replaceCharacter(old, new string, count int) {
-	var reg = regexp.MustCompile(fmt.Sprintf(`*%s*`, old))
-	if reg.MatchString(n.name) {
-		n.name = strings.Replace(n.name, old, new, count)
-	}
-}
-
+// list of nodes which keep the given json
+// as node objects
 type list struct {
 	head *node
 }
 
+// newHeader create new header
 func (lst *list) newHeader(data interface{}) *node {
 	var t nodeType
 	_, tMap := data.(map[string]interface{})
@@ -57,6 +49,8 @@ func (lst *list) newHeader(data interface{}) *node {
 	}
 	return n
 }
+
+// traversal through each node
 func (lst *list) traversal(n *node, fn func(node *node)) {
 	fn(n)
 	if n.next == nil {
