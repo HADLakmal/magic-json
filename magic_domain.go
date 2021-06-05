@@ -22,31 +22,35 @@ type JSONConverter interface {
 
 // StringConverter Convert key or value which is in string format
 type StringConverter interface {
-	// ReplaceKeyCharacter string key is replaced by the given characters
+	// ReplaceCharInKey string key is replaced by the given characters
 	// new characters will be replaced if old characters can be found in the json key
 	// only replaced single match
-	ReplaceKeyCharacter(oldCharacters, newCharacters string) JSONRelease
+	ReplaceCharInKey(oldCharacters, newCharacters string) JSONRelease
 
 	// ReplaceCharsInKey string key is replaced by the given characters
 	// new characters will be replaced if old characters can be found in the json key
 	// replace with count of the match
 	ReplaceCharsInKey(oldCharacters, newCharacters string, count int) JSONRelease
 
+	// KeyStringConverter can provide input as a function
+	// bind any key to existing string
+	KeyStringConverter(fn func(value string) string) JSONRelease
+
 	// ReplaceCharInValue string value is replaced by the given characters
 	// new characters will be replaced if old characters can be found in the json value
 	// only replaced single match
 	ReplaceCharInValue(oldCharacters, newCharacters string) JSONRelease
 
-	// ReplaceValueCharacters string value is replaced by the given characters
+	// ReplaceCharsInValue string value is replaced by the given characters
 	// new characters will be replaced if old characters can be found in the json value
 	// replace with count of the match
-	ReplaceValueCharacters(oldCharacters, newCharacters string, count int) JSONRelease
+	ReplaceCharsInValue(oldCharacters, newCharacters string, count int) JSONRelease
 
-	// ValueStringToInt convert string values into integers
+	// ValueStringToInt convert string values into integer
 	// if that is possible to do the conversion
 	ValueStringToInt() JSONRelease
 
-	// ValueStringToFloat convert string values into integers
+	// ValueStringToFloat convert string values into float
 	// if that is possible to do the conversion
 	ValueStringToFloat() JSONRelease
 
@@ -65,12 +69,12 @@ type IntegerValueConverter interface {
 	IntConverter(fn func(value int64) interface{}) JSONRelease
 }
 
-// FloatValueConverter convert value of integer into any format
+// FloatValueConverter convert value of float into any format
 type FloatValueConverter interface {
-	// FloatToString convert int64 value into string
+	// FloatToString convert float value into string
 	FloatToString() JSONRelease
 
-	// FloatToInt convert int64 value into integer
+	// FloatToInt convert float value into integer
 	FloatToInt() JSONRelease
 
 	// FloatConverter can provide input as a function

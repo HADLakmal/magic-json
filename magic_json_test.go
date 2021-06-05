@@ -214,7 +214,7 @@ func TestMJson_ReplaceKey(t *testing.T) {
 			if err != nil {
 				panic(err)
 			}
-			str, err := p.ReplaceKeyCharacter("_", "").Release()
+			str, err := p.ReplaceCharInKey("_", "").Release()
 			if err != nil && !test.wantError {
 				panic(err)
 			}

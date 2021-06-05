@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/tidwall/gjson"
-	"regexp"
 	"strconv"
 	"strings"
 )
@@ -128,13 +127,15 @@ func (mj *mJson) Release() (string, error) {
 	return string(jsonBytes), nil
 }
 
-func (mj *mJson) ReplaceKeyCharacter(oldCharacters, newCharacters string) JSONRelease {
+func (mj *mJson) ReplaceCharInKey(oldCharacters, newCharacters string) JSONRelease {
 	// old character is empty
 	if oldCharacters == "" {
 		return mj
 	}
 
-	mj.keyIdentifier(mj.beginNode, oldCharacters, newCharacters, 1)
+	mj.keyIdentifier(mj.beginNode, func(s string) string {
+		return strings.Replace(s, oldCharacters, newCharacters, 1)
+	})
 
 	return mj
 }
@@ -145,17 +146,24 @@ func (mj *mJson) ReplaceCharsInKey(oldCharacters, newCharacters string, count in
 		return mj
 	}
 
-	mj.keyIdentifier(mj.beginNode, oldCharacters, newCharacters, count)
+	mj.keyIdentifier(mj.beginNode, func(s string) string {
+		return strings.Replace(s, oldCharacters, newCharacters, count)
+	})
 
 	return mj
 }
 
-func (mj *mJson) keyIdentifier(n *node, oldCharacters, newCharacters string, count int) {
+func (mj *mJson) KeyStringConverter(fn func(value string) string) JSONRelease {
+	mj.keyIdentifier(mj.beginNode, func(s string) string {
+		return fn(s)
+	})
+
+	return mj
+}
+
+func (mj *mJson) keyIdentifier(n *node, stFn func(s string) string) {
 	mj.traversal(n, func(node *node) {
-		var reg = regexp.MustCompile(fmt.Sprintf(`%s*`, oldCharacters))
-		if reg.MatchString(node.name) {
-			node.name = strings.Replace(node.name, oldCharacters, newCharacters, count)
-		}
+		node.name = stFn(node.name)
 	})
 }
 
@@ -166,28 +174,20 @@ func (mj *mJson) ReplaceCharInValue(oldCharacters, newCharacters string) JSONRel
 	}
 
 	mj.stringValueIdentifier(mj.beginNode, func(s string) interface{} {
-		var reg = regexp.MustCompile(fmt.Sprintf(`%s*`, oldCharacters))
-		if reg.MatchString(s) {
-			return strings.Replace(s, oldCharacters, newCharacters, 1)
-		}
-		return s
+		return strings.Replace(s, oldCharacters, newCharacters, 1)
 	})
 
 	return mj
 }
 
-func (mj *mJson) ReplaceValueCharacters(oldCharacters, newCharacters string, count int) JSONRelease {
+func (mj *mJson) ReplaceCharsInValue(oldCharacters, newCharacters string, count int) JSONRelease {
 	// old character is empty
 	if oldCharacters == "" {
 		return mj
 	}
 
 	mj.stringValueIdentifier(mj.beginNode, func(s string) interface{} {
-		var reg = regexp.MustCompile(fmt.Sprintf(`%s*`, oldCharacters))
-		if reg.MatchString(s) {
-			return strings.Replace(s, oldCharacters, newCharacters, count)
-		}
-		return s
+		return strings.Replace(s, oldCharacters, newCharacters, count)
 	})
 
 	return mj

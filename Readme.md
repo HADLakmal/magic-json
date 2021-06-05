@@ -14,7 +14,7 @@ Service is capable of,
 
 ### Installing
 
-To start using Magic Json, install Go and run go get:
+To start using Magic Json, install Go and run ```go get```:
 
 ```sh
 $ go get -u github.com/HADLakmal/magic-json
@@ -24,7 +24,9 @@ This will fetch the library.
 
 ### Example Usage
 
-Load json to magic json library and release the unchanged json
+#### Load JSON
+
+Load json string to library and release the unchanged json
 
 ```go
 package main
@@ -45,12 +47,18 @@ func main() {
 }
 ```
 
-Remove `_` from JSON keys
+#### JSON Key Modify
+
+Replace character in JSON keys. If you want to replace multiple characters then you can use ```ReplaceCharsInKey()```
+with exact count. Below example replace one character in two different ways.
 
 ```go
 package main
 
-import "github.com/HADLakmal/magic-json"
+import (
+	"github.com/HADLakmal/magic-json"
+	"strings"
+)
 
 const mJson = `{"first_name":"magic","last_name":"json","age":21}`
 
@@ -59,7 +67,75 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	r, _ := m.ReplaceKeyCharacter("_", "").Release()
+	// remove _ from key
+	r, _ := m.ReplaceCharInKey("_", "").Release()
 	println(r)
+
+	// key replace by input function
+	mf, err := mjson.NewMagicJSON(mJson)
+	if err != nil {
+		panic(err)
+	}
+	// remove _ key
+	fr, _ := mf.KeyStringConverter(func(key string) string {
+		return strings.Replace(key, "_", "", 1)
+	}).Release()
+	println(fr)
 }
 ```
+
+#### JSON Value Modify
+
+Replace character in JSON value. Replace will be happened if value filed is string and value should contain the input
+character. Below example replace one character in two different ways.
+
+```go
+package main
+
+import (
+	"github.com/HADLakmal/magic-json"
+	"strings"
+)
+
+const mJson = `{"first_name":"magic_json","last_name":"library","age":21}`
+
+func main() {
+	m, err := mjson.NewMagicJSON(mJson)
+	if err != nil {
+		panic(err)
+	}
+	// remove _ from value
+	r, _ := m.ReplaceCharInValue("_", "").Release()
+	println(r)
+
+	// value replace by input function
+	mf, err := mjson.NewMagicJSON(mJson)
+	if err != nil {
+		panic(err)
+	}
+	// remove _ from value
+	rf, _ := mf.ValueStringConverter(func(value string) interface{} {
+		return strings.Replace(value, "_", "", 1)
+	}).Release()
+	println(rf)
+}
+```
+
+#### Library Functions
+
+| Function      | Return        | Explain   |
+| -------------------- | ------------- |-----------------|
+| ```Key(key string)```  | JSONConverter  | find specific JSON key then your changes will affected under this JSON object/array. There can be multiple keys with same name but that will be discarded and select the first searched key |
+| ```ReplaceCharInKey(oldCharacters, newCharacters string)```  | JSONRelease  | string key is replaced by the given characters   |
+| ```ReplaceCharsInKey(oldCharacters, newCharacters string, count int)```  | JSONRelease  | string key is replaced by the given characters and replace with count of the match   |
+| ```KeyStringConverter(fn func(value string) string)```  | JSONRelease  | Key character replacement can be provide as a function, that will bind key to desired string |
+| ```ReplaceCharInValue(oldCharacters, newCharacters string)```  | JSONRelease  | string value is replaced by the given characters   |
+| ```ReplaceCharsInValue(oldCharacters, newCharacters string, count int)```  | JSONRelease  | string value is replaced by the given characters and replace with count of the match   |
+| ```ValueStringConverter(fn func(value string) string)```  | JSONRelease  | value character replacement can be provide as a function, that will bind key to desired string |
+| ```ValueStringToInt()```  | JSONRelease  | convert string values into integer |
+| ```ValueStringToFloat()```  | JSONRelease  | convert string values into float |
+| ```IntToString()```  | JSONRelease  | convert integer value into string |
+| ```IntConverter(fn func(value int64) interface{}) string)```  | JSONRelease  | convert integer value into any desired value |
+| ```FloatToString()```  | JSONRelease  | convert float value into string |
+| ```FloatToInt()```  | JSONRelease  | convert float value into integer |
+| ```FloatConverter(fn func(value float64) interface{})```  | JSONRelease  | convert float value by providing input as a function |
