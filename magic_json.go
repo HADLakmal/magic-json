@@ -20,15 +20,15 @@ func NewMagicJSON(json string) (MagicJSON, error) {
 }
 
 // extractor bind map of json information into list of nodes
-func (mj *mJson) extractor(data interface{}, n *node) {
+func (mj *mJson) extractor(data interface{}, n *node, ancestorsName []string) {
 	m, tMap := data.(map[string]interface{})
 	d, tArray := data.([]interface{})
 	switch {
 	case tArray:
 		for i, v := range d {
-			tn := newNode(n.name, i, nil)
+			tn := newNode(n.name, i, v, ancestorsName)
 			n.next = append(n.next, tn)
-			mj.extractor(v, tn)
+			mj.extractor(v, tn, tn.path)
 		}
 	case tMap:
 		for v, k := range m {
@@ -37,19 +37,20 @@ func (mj *mJson) extractor(data interface{}, n *node) {
 
 			switch {
 			case typeOfMap:
-				tm := newNode(v, object, nil)
+				tm := newNode(v, object, k, ancestorsName)
 				n.next = append(n.next, tm)
-				mj.extractor(k, tm)
+				mj.extractor(k, tm, tm.path)
 			case typeOfArray:
-				tn := newNode(v, array, nil)
+				tn := newNode(v, array, k, ancestorsName)
 				n.next = append(n.next, tn)
-				mj.extractor(k, tn)
+				mj.extractor(k, tn, tn.path)
 			default:
-				fn := newNode(v, field, k)
+				fn := newNode(v, field, k, ancestorsName)
 				n.next = append(n.next, fn)
 			}
 		}
 	default:
+		n.nt = field
 		n.value = data
 	}
 }
@@ -75,9 +76,6 @@ func (mj *mJson) compound(n *node) interface{} {
 			return m
 		}
 	case int:
-		if n.value != nil {
-			return n.value
-		}
 		m := make(map[string]interface{})
 		for _, nd := range n.next {
 			m[nd.name] = mj.compound(nd)
@@ -89,14 +87,15 @@ func (mj *mJson) compound(n *node) interface{} {
 }
 
 // load parse the string json into a mJson
-func (mj *mJson) load(j string) (MagicJSON, error) {
+func (mj *mJson) load(j string) (*mJson, error) {
 	// parse json string from gjson lib
 	p := gjson.Parse(j).Value()
 	if p == nil {
 		return nil, fmt.Errorf(`json can't convert to json map'`)
 	}
 	// json object extract into node list
-	mj.extractor(p, mj.newHeader(p))
+	n := mj.newHeader(p)
+	mj.extractor(p, n, n.path)
 
 	// attach beginning node as header
 	mj.beginNode = mj.head
@@ -110,6 +109,7 @@ func (mj *mJson) Key(key string) JSONConverter {
 		if node.name == key {
 			mj.beginNode = node
 		}
+		return
 	})
 
 	return mj
@@ -229,9 +229,6 @@ func (mj *mJson) ValueStringConverter(fn func(value string) interface{}) JSONRel
 
 func (mj *mJson) stringValueIdentifier(n *node, stFn func(s string) interface{}) {
 	mj.traversal(n, func(node *node) {
-		if node.value == nil {
-			return
-		}
 		if v, ok := node.value.(string); ok {
 			node.value = stFn(v)
 		}
