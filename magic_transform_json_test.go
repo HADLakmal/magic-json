@@ -14,25 +14,27 @@ func TestMJson_NewTransferJSON(t *testing.T) {
 	}{
 		`Json value and array transfer`: {newJsonBody: `{
     "name": {
-        "first": "{{first_name}}",
-        "last": "{{last_name}}",
-"filter_value" : "{{filters.#}}"
+        "first": "{{information.first_name}}",
+        "last": "{{information.last_name}}",
+"filter_value" : "{{filters.#.0}}"
     }
 }`, oldJsonBody: `{
-    "first_name" : "dam",
-    "last_name" : "lak",
-"filters":[
-{
-            "key": "type",
-            "operator": "MATCH",
-            "values": [
-                "ASSET"
-            ]
-        }
-]
-
+  "information": {
+    "first_name": "magic",
+    "last_name": "json"
+  },
+  "filters": [
+    {
+      "key": "type",
+      "operator": 1,
+      "values": [
+        "a",
+        "b"
+      ]
+    }
+  ]
 }`,
-			expected: `{"name":{"filter_value":[{"key":"type","operator":"MATCH","values":["ASSET"]}],"first":"dam","last":"lak"}}`},
+			expected: `{"name":{"filter_value":{"key":"type","operator":1,"values":["a","b"]},"first":"magic","last":"json"}}`},
 
 		`Json value and array single value transfer`: {newJsonBody: `{
     "name": {
@@ -77,35 +79,44 @@ func TestMJson_NewTransferJSON(t *testing.T) {
 
 }`,
 			expected: `{"filter_value":"null","name":{"first":"dam","last":"lak"}}`},
-		`Json array transform`: {newJsonBody: `{
-"records":["<<filters>>" ,
-{"name": {
-        "first": "{{filters.#.<<filters>>.operator}}",
-        "last": "{{last_name}}"
-    }}],
-"filter_value" : "{{filters.#.0.key}}"
-}`, oldJsonBody: `{
-    "first_name" : "dam",
-    "last_name" : "lak",
-"filters":[
-{
-            "key": "type",
-            "operator": "MATCH",
-            "values": [
-                1
-            ]
+		`Json array transform`: {newJsonBody: `{"name": {
+            "first": "{{information.first_name}}",
+            "last": "{{information.last_name}}"
         },
-{
-            "key": "iterator",
-            "operator": "EQUAL",
-            "values": [
-                1
-            ]
-        }
-]
-
+        "filter_value" : ["<<filters>>",
+            {
+                "type": "{{filters.#.<<filters>>.key.type}}",
+                "operator": "{{filters.#.<<filters>>.operator}}"
+            }]
+    }`, oldJsonBody: `{
+  "information": {
+    "first_name": "magic",
+    "last_name": "json"
+  },
+  "filters": [
+    {
+      "key": {
+        "type" : "binary"
+        },
+      "operator": 1,
+      "values": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "key": {
+        "type" : "secondary"
+        },
+      "operator": 2,
+      "values": [
+        1232,
+        4666
+      ]
+    }
+  ]
 }`,
-			expected: `{"filter_value":"type","records":[{"name":{"first":"MATCH","last":"lak"}},{"name":{"first":"EQUAL","last":"lak"}}]}`},
+			expected: `{"filter_value":[{"operator":1,"type":"binary"},{"operator":2,"type":"secondary"}],"name":{"first":"magic","last":"json"}}`},
 
 		`Json array transform extend`: {newJsonBody: `{
 "records":["<<payload.filters>>" ,
