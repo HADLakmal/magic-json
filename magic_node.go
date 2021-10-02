@@ -21,15 +21,16 @@ type node struct {
 
 // newNode create new node
 func newNode(name string, nt interface{}, value interface{}, path []string) *node {
+	newPath := make([]string, 0)
+	for _, p := range path {
+		newPath = append(newPath, p)
+	}
+
 	pathName := name
+
 	switch nt.(type) {
-	case nodeType:
-		switch nt {
-		case array:
-			path = append(path, name)
-			pathName = "#"
-		}
 	case int:
+		newPath = append(newPath,"#")
 		pathName = fmt.Sprintf(`%d`, nt)
 	}
 
@@ -37,6 +38,6 @@ func newNode(name string, nt interface{}, value interface{}, path []string) *nod
 		name:  name,
 		nt:    nt,
 		value: value,
-		path:  append(path, pathName),
+		path:  append(newPath, pathName),
 	}
 }
