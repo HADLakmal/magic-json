@@ -6,7 +6,7 @@ library requirements.
 Service is capable of,
 
 * [Change JSON key or value](ReadmeConversion.md)
-* [Transform JSON onto different JSON format](ReadmeTransform.md)
+* [Transform JSON into different JSON format](ReadmeTransform.md)
 
 # Getting Start
 
