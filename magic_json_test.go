@@ -3,6 +3,7 @@ package mjson_test
 import (
 	"fmt"
 	mjson "github.com/HADLakmal/magic-json"
+	"reflect"
 	"testing"
 )
 
@@ -321,6 +322,38 @@ func TestMJson_IntConverter(t *testing.T) {
 				panic(err)
 			}
 			if str != test.expected {
+				t.Fatal(fmt.Sprintf(`got : %s, \n and expected :%s`, str, test.expected))
+			}
+		})
+	}
+}
+
+func TestMJson_ReleaseJson(t *testing.T) {
+	tests := map[string]struct {
+		jsonBody  string
+		wantError bool
+		expected  interface{}
+	}{
+		`object Json `: {jsonBody: `{
+    "paging": {
+        "offset": 1.1,
+        "size": 20
+    }
+}`, expected: map[string]interface{}{
+			`paging`: map[string]interface{}{
+				`offset`: "1.1",
+				`size`:   "20",
+			},
+		}},
+	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			p, err := mjson.NewMagicJSON(test.jsonBody)
+			if err != nil {
+				panic(err)
+			}
+			str := p.FloatToString().ReleaseJson()
+			if !reflect.DeepEqual(str, test.expected) {
 				t.Fatal(fmt.Sprintf(`got : %s, \n and expected :%s`, str, test.expected))
 			}
 		})

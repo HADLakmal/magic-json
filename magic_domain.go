@@ -85,6 +85,7 @@ type FloatValueConverter interface {
 // JSONRelease release the json object as a string
 type JSONRelease interface {
 	Release() (json string, err error)
+	ReleaseJson() interface{}
 }
 
 // JSONTransfer json value transfer

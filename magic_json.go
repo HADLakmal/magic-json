@@ -115,7 +115,7 @@ func (mj *mJson) Key(key string) JSONConverter {
 	return mj
 }
 
-// Release mJson objects
+// Release mJson objects as string
 func (mj *mJson) Release() (string, error) {
 	m := mj.compound(mj.head)
 
@@ -125,6 +125,11 @@ func (mj *mJson) Release() (string, error) {
 	}
 
 	return string(jsonBytes), nil
+}
+
+// ReleaseJson mJson objects as json
+func (mj *mJson) ReleaseJson() interface{} {
+	return mj.compound(mj.head)
 }
 
 func (mj *mJson) ReplaceCharInKey(oldCharacters, newCharacters string) JSONRelease {

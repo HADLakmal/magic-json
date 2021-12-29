@@ -12,10 +12,34 @@ Service is capable of,
 
 # Getting Start
 
-
 ### Example Usage
 
 #### Load JSON
+
+##### Result as String
+
+Load json string to library and release the unchanged json string
+
+```go
+package main
+
+import "github.com/HADLakmal/magic-json"
+
+const mJson = `{"name":{"first":"magic","last":"json"},"age":21}`
+
+func main() {
+	m, err := mjson.NewMagicJSON(mJson)
+	if err != nil {
+		// error happen due to mJson is not in proper format
+		panic(err)
+	}
+	// release the loaded json as string
+	r, _ := m.Release()
+	println(r)
+}
+```
+
+##### Result as Json
 
 Load json string to library and release the unchanged json
 
@@ -33,7 +57,7 @@ func main() {
 		panic(err)
 	}
 	// release the loaded json as string
-	r, _ := m.Release()
+	r := m.ReleaseJson()
 	println(r)
 }
 ```

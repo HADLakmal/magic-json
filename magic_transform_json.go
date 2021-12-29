@@ -66,11 +66,18 @@ func (mj *mTransferJson) jsonNotationValueExtract() {
 	})
 }
 
-// Release the new json
+// Release the new json string
 func (mj *mTransferJson) Release() (json string, err error) {
 	mj.jsonNotationValueExtract()
 
 	return mj.newJson.Release()
+}
+
+// Release the new json
+func (mj *mTransferJson) ReleaseJson() interface{} {
+	mj.jsonNotationValueExtract()
+
+	return mj.newJson.ReleaseJson()
 }
 
 // duplicate new nodes
