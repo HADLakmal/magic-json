@@ -19,6 +19,11 @@ func NewMagicJSON(json string) (MagicJSON, error) {
 	return new(mJson).load(json)
 }
 
+// NewMagicJSONInterface create the new mJson
+func NewMagicJSONInterface(jsonIntr interface{}) (MagicJSON, error) {
+	return new(mJson).loadInterface(jsonIntr)
+}
+
 // extractor bind map of json information into list of nodes
 func (mj *mJson) extractor(data interface{}, n *node, ancestorsName []string) {
 	m, tMap := data.(map[string]interface{})
@@ -93,6 +98,18 @@ func (mj *mJson) load(j string) (*mJson, error) {
 	if p == nil {
 		return nil, fmt.Errorf(`json can't convert to json map'`)
 	}
+	// json object extract into node list
+	n := mj.newHeader(p)
+	mj.extractor(p, n, n.path)
+
+	// attach beginning node as header
+	mj.beginNode = mj.head
+
+	return mj, nil
+}
+
+// loadInterface parse the interface object into a mJson
+func (mj *mJson) loadInterface(p interface{}) (*mJson, error) {
 	// json object extract into node list
 	n := mj.newHeader(p)
 	mj.extractor(p, n, n.path)

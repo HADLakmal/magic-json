@@ -451,3 +451,33 @@ func TestMJson_FloatConverter(t *testing.T) {
 		})
 	}
 }
+
+func TestMJson_NewMagicJSONInterface(t *testing.T) {
+	tests := map[string]struct {
+		jsonInter map[string]interface{}
+		wantError bool
+		expected  string
+	}{
+		`object Json `: {jsonInter: map[string]interface{}{
+			`paging`: map[string]interface{}{
+				`offset`: 1,
+				`size`:   2,
+			},
+		}, expected: `{"paging":{"offset":1,"size":2}}`},
+	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			p, err := mjson.NewMagicJSONInterface(test.jsonInter)
+			if err != nil {
+				panic(err)
+			}
+			str, err := p.Release()
+			if err != nil && !test.wantError {
+				panic(err)
+			}
+			if str != test.expected {
+				t.Fatal(fmt.Sprintf(`got : %s, \n and expected :%s`, str, test.expected))
+			}
+		})
+	}
+}

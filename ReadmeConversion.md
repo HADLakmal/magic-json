@@ -14,7 +14,7 @@ Service is capable of,
 
 ### Example Usage
 
-#### Load JSON
+#### Load JSON String
 
 ##### Result as String
 
@@ -52,6 +52,64 @@ const mJson = `{"name":{"first":"magic","last":"json"},"age":21}`
 
 func main() {
 	m, err := mjson.NewMagicJSON(mJson)
+	if err != nil {
+		// error happen due to mJson is not in proper format
+		panic(err)
+	}
+	// release the loaded json as string
+	r := m.ReleaseJson()
+	println(r)
+}
+```
+
+#### Load JSON Interface
+
+##### Result as String
+
+Load json string to library and release the unchanged json string
+
+```go
+package main
+
+import "github.com/HADLakmal/magic-json"
+
+var mJson = map[string]interface{}{
+	`name`: map[string]interface{}{
+		`first`: `magic`,
+		`last`:  `json`,
+	},
+}
+
+func main() {
+	m, err := mjson.NewMagicJSONInterface(mJson)
+	if err != nil {
+		// error happen due to mJson is not in proper format
+		panic(err)
+	}
+	// release the loaded json as string
+	r, _ := m.Release()
+	println(r)
+}
+```
+
+##### Result as Json
+
+Load json string to library and release the unchanged json
+
+```go
+package main
+
+import "github.com/HADLakmal/magic-json"
+
+var mJson = map[string]interface{}{
+	`name`: map[string]interface{}{
+		`first`: `magic`,
+		`last`:  `json`,
+	},
+}
+
+func main() {
+	m, err := mjson.NewMagicJSONInterface(mJson)
 	if err != nil {
 		// error happen due to mJson is not in proper format
 		panic(err)
