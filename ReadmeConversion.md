@@ -8,6 +8,7 @@ Service is capable of,
 * Change or Replace the characters of JSON key
 * Change characters of a JSON value
 * Replace JSON value by entire different type of value
+* Check value through the function
 * Travel to unique key object and change behaviours as describe above
 
 # Getting Start
@@ -196,19 +197,20 @@ func main() {
 
 #### Library Functions
 
-| Function      | Return        | Explain   |
-| -------------------- | ------------- |-----------------|
+| Function      | Return        | Explain                                                                                                                                                                                     |
+| -------------------- | ------------- |---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | ```Key(key string)```  | JSONConverter  | find specific JSON key then your changes will affected under this JSON object/array. There can be multiple keys with same name but that will be discarded and select the first searched key |
-| ```ReplaceCharInKey(oldCharacters, newCharacters string)```  | JSONRelease  | string key is replaced by the given characters   |
-| ```ReplaceCharsInKey(oldCharacters, newCharacters string, count int)```  | JSONRelease  | string key is replaced by the given characters and replace with count of the match   |
-| ```KeyStringConverter(fn func(value string) string)```  | JSONRelease  | Key character replacement can be provide as a function, that will bind key to desired string |
-| ```ReplaceCharInValue(oldCharacters, newCharacters string)```  | JSONRelease  | string value is replaced by the given characters   |
-| ```ReplaceCharsInValue(oldCharacters, newCharacters string, count int)```  | JSONRelease  | string value is replaced by the given characters and replace with count of the match   |
-| ```ValueStringConverter(fn func(value string) string)```  | JSONRelease  | value character replacement can be provide as a function, that will bind key to desired string |
-| ```ValueStringToInt()```  | JSONRelease  | convert string values into integer |
-| ```ValueStringToFloat()```  | JSONRelease  | convert string values into float |
-| ```IntToString()```  | JSONRelease  | convert integer value into string |
-| ```IntConverter(fn func(value int64) interface{}) string)```  | JSONRelease  | convert integer value into any desired value |
-| ```FloatToString()```  | JSONRelease  | convert float value into string |
-| ```FloatToInt()```  | JSONRelease  | convert float value into integer |
-| ```FloatConverter(fn func(value float64) interface{})```  | JSONRelease  | convert float value by providing input as a function |
+| ```ReplaceCharInKey(oldCharacters, newCharacters string)```  | JSONRelease  | string key is replaced by the given characters                                                                                                                                              |
+| ```ReplaceCharsInKey(oldCharacters, newCharacters string, count int)```  | JSONRelease  | string key is replaced by the given characters and replace with count of the match                                                                                                          |
+| ```KeyStringConverter(fn func(value string) string)```  | JSONRelease  | Key character replacement can be provide as a function, that will bind key to desired string                                                                                                |
+| ```ReplaceCharInValue(oldCharacters, newCharacters string)```  | JSONRelease  | string value is replaced by the given characters                                                                                                                                            |
+| ```ReplaceCharsInValue(oldCharacters, newCharacters string, count int)```  | JSONRelease  | string value is replaced by the given characters and replace with count of the match                                                                                                        |
+| ```ValueStringConverter(fn func(value string) string)```  | JSONRelease  | value character replacement can be provide as a function, that will bind key to desired string                                                                                              |
+| ```ValueStringToInt()```  | JSONRelease  | convert string values into integer                                                                                                                                                          |
+| ```ValueStringToFloat()```  | JSONRelease  | convert string values into float                                                                                                                                                            |
+| ```IntToString()```  | JSONRelease  | convert integer value into string                                                                                                                                                           |
+| ```IntConverter(fn func(value int64) interface{}) string)```  | JSONRelease  | convert integer value into any desired value                                                                                                                                                |
+| ```FloatToString()```  | JSONRelease  | convert float value into string                                                                                                                                                             |
+| ```FloatToInt()```  | JSONRelease  | convert float value into integer                                                                                                                                                            |
+| ```FloatConverter(fn func(value float64) interface{})```  | JSONRelease  | convert float value by providing input as a function                                                                                                                                        |
+| ```ValueChecker(fn func(value interface{}) interface{})```  |  JSONRelease  | check the value format input as a function                                                                                                                                                  |

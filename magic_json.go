@@ -257,6 +257,20 @@ func (mj *mJson) stringValueIdentifier(n *node, stFn func(s string) interface{})
 	})
 }
 
+func (mj *mJson) ValueChecker(fn func(value interface{}) interface{}) JSONRelease {
+	mj.valueChecker(mj.beginNode, func(s interface{}) interface{} {
+		return fn(s)
+	})
+
+	return mj
+}
+
+func (mj *mJson) valueChecker(n *node, stFn func(s interface{}) interface{}) {
+	mj.traversal(n, func(node *node) {
+		stFn(node.value)
+	})
+}
+
 func (mj *mJson) IntToString() JSONRelease {
 	mj.intValueIdentifier(mj.beginNode, func(val int64) interface{} {
 		return fmt.Sprintf(`%v`, val)

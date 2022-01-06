@@ -57,6 +57,10 @@ type StringConverter interface {
 	// ValueStringConverter can provide input as a function
 	// bind any value to existing position
 	ValueStringConverter(fn func(value string) interface{}) JSONRelease
+
+	// ValueChecker can provide input as a function
+	// check any value
+	ValueChecker(fn func(value interface{}) interface{}) JSONRelease
 }
 
 // IntegerValueConverter convert value of integer into any format
