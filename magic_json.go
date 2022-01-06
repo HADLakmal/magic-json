@@ -267,7 +267,7 @@ func (mj *mJson) ValueChecker(fn func(value interface{}) interface{}) JSONReleas
 
 func (mj *mJson) valueChecker(n *node, stFn func(s interface{}) interface{}) {
 	mj.traversal(n, func(node *node) {
-		stFn(node.value)
+		node.value = stFn(node.value)
 	})
 }
 
